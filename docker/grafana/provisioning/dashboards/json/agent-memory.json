@@ -1,0 +1,14 @@
+{
+  "title": "InfiniteChat Agent Memory",
+  "uid": "infinitechat-agent-memory",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {"type":"timeseries","title":"上下文压缩前后Token","gridPos":{"h":8,"w":12,"x":0,"y":0},"targets":[{"expr":"ai_context_tokens_before_sum / clamp_min(ai_context_tokens_before_count,1)","legendFormat":"before"},{"expr":"ai_context_tokens_after_sum / clamp_min(ai_context_tokens_after_count,1)","legendFormat":"after"}]},
+    {"type":"stat","title":"Outbox积压","gridPos":{"h":8,"w":6,"x":12,"y":0},"targets":[{"expr":"ai_memory_outbox_backlog"}]},
+    {"type":"timeseries","title":"记忆召回耗时","gridPos":{"h":8,"w":6,"x":18,"y":0},"targets":[{"expr":"rate(ai_memory_recall_duration_seconds_sum[5m]) / clamp_min(rate(ai_memory_recall_duration_seconds_count[5m]),1)"}]},
+    {"type":"timeseries","title":"记忆写入/去重决策","gridPos":{"h":8,"w":12,"x":0,"y":8},"targets":[{"expr":"sum by (decision) (rate(ai_memory_dedup_total[5m]))"}]},
+    {"type":"timeseries","title":"权限与敏感信息拦截","gridPos":{"h":8,"w":12,"x":12,"y":8},"targets":[{"expr":"sum(rate(ai_memory_permission_denied_total[5m]))","legendFormat":"permission"},{"expr":"sum(rate(ai_memory_sensitive_rejected_total[5m]))","legendFormat":"sensitive"}]}
+  ]
+}

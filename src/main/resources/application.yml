@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: IM
+  profiles:
+    active: dev
+
