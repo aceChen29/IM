@@ -1,5 +1,7 @@
 HELP.md
 src/main/resources/application-dev.yml
+/id_ed25519
+/id_ed25519.pub
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/

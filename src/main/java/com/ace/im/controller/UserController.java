@@ -1,13 +1,20 @@
 package com.ace.im.controller;
 
 import com.ace.im.common.BaseResponse;
+import com.ace.im.common.ErrorCode;
 import com.ace.im.common.ResultUtils;
 import com.ace.im.constants.UserConstant;
+import com.ace.im.exception.BusinessException;
 import com.ace.im.model.dto.UserLoginCodeRequest;
 import com.ace.im.model.dto.UserLoginPasswordRequest;
 import com.ace.im.model.dto.UserRegisterRequest;
 import com.ace.im.model.vo.LoginAndRegisterResponse;
+import com.ace.im.model.vo.TokenResponse;
 import com.ace.im.service.UserService;
+import com.ace.im.utils.JwtUtil;
+import io.jsonwebtoken.Claims;
+import io.micrometer.common.util.StringUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -30,13 +37,11 @@ public class UserController {
         return ResultUtils.success(UserConstant.SEND_EMAIL_SUCCESS);// 这里调用别人的服务 无论成功失败都先成功
     }
 
-    //注册
-    @PostMapping("/register")
-
-
     //@Valid @RequestBody UserRegisterRequest request
     //@RequestBody @Valid UserRegisterRequest request
     //处理时，Spring 会先通过 @RequestBody 把 JSON 转成对象，再根据 @Valid 校验对象字段。源码中两个注解谁写在前面，不改变这个流程。
+    //注册
+    @PostMapping("/register")
     public BaseResponse<LoginAndRegisterResponse> register(@Valid @RequestBody UserRegisterRequest userRegisterRequest){
         return ResultUtils.success(userService.register(userRegisterRequest));
     }
@@ -48,5 +53,22 @@ public class UserController {
     @PostMapping("/login/code")
     public BaseResponse<LoginAndRegisterResponse> loginCode(@Valid @RequestBody UserLoginCodeRequest userLoginCodeRequest) {
         return ResultUtils.success(userService.loginCode(userLoginCodeRequest));
+    }
+
+    @GetMapping("/logout")
+    public BaseResponse<Boolean> logout(HttpServletRequest request) {
+        String accessToken = request.getHeader("Access-Token");
+        Claims claims = JwtUtil.parse(accessToken);
+        if(StringUtils.isBlank(accessToken))
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        return ResultUtils.success(userService.logout(claims.getSubject()));
+    }
+    @PostMapping("/refresh")
+    public BaseResponse<TokenResponse> refreshToken(HttpServletRequest request) {
+        String refreshToken = request.getHeader("Refresh-Token");
+        if(StringUtils.isBlank(refreshToken))
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+
+        return ResultUtils.success(userService.refreshToken(refreshToken));
     }
 }

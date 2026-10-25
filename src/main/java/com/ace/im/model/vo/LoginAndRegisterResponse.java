@@ -17,4 +17,7 @@ public class LoginAndRegisterResponse {
 
     private String description;
 
+    private String accessToken;
+
+    private String refreshToken;
 }

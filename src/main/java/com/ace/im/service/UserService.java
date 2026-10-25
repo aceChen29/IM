@@ -5,6 +5,7 @@ import com.ace.im.model.dto.UserLoginPasswordRequest;
 import com.ace.im.model.dto.UserRegisterRequest;
 import com.ace.im.model.entity.User;
 import com.ace.im.model.vo.LoginAndRegisterResponse;
+import com.ace.im.model.vo.TokenResponse;
 import com.baomidou.mybatisplus.extension.service.IService;
 import jakarta.validation.Valid;
 
@@ -22,4 +23,8 @@ public interface UserService extends IService<User> {
     LoginAndRegisterResponse loginPassword(@Valid UserLoginPasswordRequest userLoginPasswordRequest);
 
     LoginAndRegisterResponse loginCode(@Valid UserLoginCodeRequest userLoginCodeRequest);
+
+    Boolean logout(String subject);
+
+    TokenResponse refreshToken(String refreshToken);
 }

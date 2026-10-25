@@ -10,12 +10,15 @@ import com.ace.im.model.dto.UserLoginCodeRequest;
 import com.ace.im.model.dto.UserLoginPasswordRequest;
 import com.ace.im.model.dto.UserRegisterRequest;
 import com.ace.im.model.vo.LoginAndRegisterResponse;
+import com.ace.im.model.vo.TokenResponse;
 import com.ace.im.utils.EmailUtil;
+import com.ace.im.utils.JwtUtil;
 import com.ace.im.utils.RandomCodeUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ace.im.model.entity.User;
 import com.ace.im.service.UserService;
 import com.ace.im.mapper.UserMapper;
+import io.jsonwebtoken.Claims;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
@@ -34,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService{
     private final EmailUtil emailUtil;
     private final StringRedisTemplate stringRedisTemplate;
+
     @Override
     public void sendCapcha(String targetEmail) {
         // 检查是否在5分钟内已发送验证码
@@ -87,8 +91,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user == null || !BCrypt.checkpw(password, user.getPassword())) {
             throw new BusinessException(ErrorCode.LOGIN_ERROR);
         }
+        String userId = user.getUserId().toString();
+        String accessToken = JwtUtil.generate(userId, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
+        String refreshToken = JwtUtil.generate(userId, UserConstant.REFRESH_TOKEN_EXPIRE_TIME, UserConstant.REFRESH_TOKEN_UNIT);
+        stringRedisTemplate.opsForValue().set(UserConstant.ACCESS_TOKEN_PREFIX + userId, accessToken, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
+        stringRedisTemplate.opsForValue().set(UserConstant.REFRESH_TOKEN_PREFIX + userId, refreshToken, UserConstant.REFRESH_TOKEN_EXPIRE_TIME, UserConstant.REFRESH_TOKEN_UNIT);
         LoginAndRegisterResponse response = new LoginAndRegisterResponse();
         BeanUtil.copyProperties(user, response);
+        response.setAccessToken(accessToken);
+        response.setRefreshToken(refreshToken);
+
         return response;
     }
 
@@ -104,10 +116,43 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if(StringUtils.isBlank(redisCode) || !randomCode.equals(redisCode))
             throw new BusinessException(ErrorCode.LOGIN_ERROR_CODE);
         stringRedisTemplate.delete(email);
+        String userId = user.getUserId().toString();
+        String accessToken = JwtUtil.generate(userId, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
+        String refreshToken = JwtUtil.generate(userId, UserConstant.REFRESH_TOKEN_EXPIRE_TIME, UserConstant.REFRESH_TOKEN_UNIT);
+        stringRedisTemplate.opsForValue().set(UserConstant.ACCESS_TOKEN_PREFIX + userId, accessToken, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
+        stringRedisTemplate.opsForValue().set(UserConstant.REFRESH_TOKEN_PREFIX + userId, refreshToken, UserConstant.REFRESH_TOKEN_EXPIRE_TIME, UserConstant.REFRESH_TOKEN_UNIT);
+
         LoginAndRegisterResponse loginAndRegisterResponse = new LoginAndRegisterResponse();
         BeanUtil.copyProperties(user, loginAndRegisterResponse);
+        loginAndRegisterResponse.setAccessToken(accessToken);
+        loginAndRegisterResponse.setRefreshToken(refreshToken);
         return loginAndRegisterResponse;
     }
+    //后续退出需要先通过jwt校验用户身份，利用拦截器拦截对应接口
+    @Override
+    public Boolean logout(String userId) {
+        stringRedisTemplate.delete(UserConstant.ACCESS_TOKEN_PREFIX + userId);
+        stringRedisTemplate.delete(UserConstant.REFRESH_TOKEN_PREFIX + userId);
+        return true;
+    }
+
+    @Override
+    public TokenResponse refreshToken(String refreshToken) {
+        Claims claims = JwtUtil.parse(refreshToken);
+        String userId = claims.getSubject();
+        String redisRefreshToken = stringRedisTemplate.opsForValue().get(UserConstant.REFRESH_TOKEN_PREFIX + userId);
+        if(StringUtils.isBlank(redisRefreshToken) || !redisRefreshToken.equals(refreshToken))
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        String accessToken = JwtUtil.generate(userId, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
+        stringRedisTemplate.opsForValue().set(UserConstant.ACCESS_TOKEN_PREFIX + userId, accessToken, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
+        TokenResponse tokenResponse = new TokenResponse();
+        tokenResponse.setAccessToken(accessToken);
+        tokenResponse.setRefreshToken(refreshToken);
+
+        return tokenResponse;
+    }
+
+
 }
 
 
