@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://ip/infinitechat?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username:
+    password:
+  data:
+    redis:
+      database:
+      host:
+      port:
+      timeout:
+  mail:
+    host:
+    port:
+    username:
+    password:
+    properties:
+      mail:
+        smtp:
+          auth:
+          starttls:
+            enable:
+mybatis-plus:
+  global-config:
+    db-config:
+      logic-delete-field:
+      logic-delete-value:
+      logic-not-delete-value:

@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: GateWay
+  profiles:
+    active: dev
+server:
+  port: 10010

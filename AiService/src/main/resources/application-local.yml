@@ -1,0 +1,16 @@
+spring:
+  data:
+    redis:
+      database:
+      host:
+      port:
+      timeout:
+pgvector:
+  database:
+  host:
+  port:
+  user:
+  password:
+  table:
+rag:
+  docs-path:
