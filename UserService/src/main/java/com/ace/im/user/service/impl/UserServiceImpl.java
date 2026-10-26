@@ -3,6 +3,7 @@ package com.ace.im.user.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.ace.im.user.common.ErrorCode;
+import com.ace.im.common.constant.CommonConstant;
 import com.ace.im.user.constants.UserConstant;
 import com.ace.im.user.exception.BusinessException;
 import com.ace.im.user.model.dto.UserLoginCodeRequest;
@@ -11,7 +12,7 @@ import com.ace.im.user.model.dto.UserRegisterRequest;
 import com.ace.im.user.model.vo.LoginAndRegisterResponse;
 import com.ace.im.user.model.vo.TokenResponse;
 import com.ace.im.user.utils.EmailUtil;
-import com.ace.im.user.utils.JwtUtil;
+import com.ace.im.common.utils.JwtUtil;
 import com.ace.im.user.utils.RandomCodeUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ace.im.user.model.entity.User;
@@ -91,10 +92,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ErrorCode.LOGIN_ERROR);
         }
         String userId = user.getUserId().toString();
-        String accessToken = JwtUtil.generate(userId, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
-        String refreshToken = JwtUtil.generate(userId, UserConstant.REFRESH_TOKEN_EXPIRE_TIME, UserConstant.REFRESH_TOKEN_UNIT);
-        stringRedisTemplate.opsForValue().set(UserConstant.ACCESS_TOKEN_PREFIX + userId, accessToken, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
-        stringRedisTemplate.opsForValue().set(UserConstant.REFRESH_TOKEN_PREFIX + userId, refreshToken, UserConstant.REFRESH_TOKEN_EXPIRE_TIME, UserConstant.REFRESH_TOKEN_UNIT);
+        String accessToken = JwtUtil.generate(userId, CommonConstant.ACCESS_TOKEN_EXPIRE_TIME, CommonConstant.ACCESS_TOKEN_UNIT);
+        String refreshToken = JwtUtil.generate(userId, CommonConstant.REFRESH_TOKEN_EXPIRE_TIME, CommonConstant.REFRESH_TOKEN_UNIT);
+        stringRedisTemplate.opsForValue().set(CommonConstant.ACCESS_TOKEN_PREFIX + userId, accessToken, CommonConstant.ACCESS_TOKEN_EXPIRE_TIME, CommonConstant.ACCESS_TOKEN_UNIT);
+        stringRedisTemplate.opsForValue().set(CommonConstant.REFRESH_TOKEN_PREFIX + userId, refreshToken, CommonConstant.REFRESH_TOKEN_EXPIRE_TIME, CommonConstant.REFRESH_TOKEN_UNIT);
         LoginAndRegisterResponse response = new LoginAndRegisterResponse();
         BeanUtil.copyProperties(user, response);
         response.setAccessToken(accessToken);
@@ -116,10 +117,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ErrorCode.LOGIN_ERROR_CODE);
         stringRedisTemplate.delete(email);
         String userId = user.getUserId().toString();
-        String accessToken = JwtUtil.generate(userId, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
-        String refreshToken = JwtUtil.generate(userId, UserConstant.REFRESH_TOKEN_EXPIRE_TIME, UserConstant.REFRESH_TOKEN_UNIT);
-        stringRedisTemplate.opsForValue().set(UserConstant.ACCESS_TOKEN_PREFIX + userId, accessToken, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
-        stringRedisTemplate.opsForValue().set(UserConstant.REFRESH_TOKEN_PREFIX + userId, refreshToken, UserConstant.REFRESH_TOKEN_EXPIRE_TIME, UserConstant.REFRESH_TOKEN_UNIT);
+        String accessToken = JwtUtil.generate(userId, CommonConstant.ACCESS_TOKEN_EXPIRE_TIME, CommonConstant.ACCESS_TOKEN_UNIT);
+        String refreshToken = JwtUtil.generate(userId, CommonConstant.REFRESH_TOKEN_EXPIRE_TIME, CommonConstant.REFRESH_TOKEN_UNIT);
+        stringRedisTemplate.opsForValue().set(CommonConstant.ACCESS_TOKEN_PREFIX + userId, accessToken, CommonConstant.ACCESS_TOKEN_EXPIRE_TIME, CommonConstant.ACCESS_TOKEN_UNIT);
+        stringRedisTemplate.opsForValue().set(CommonConstant.REFRESH_TOKEN_PREFIX + userId, refreshToken, CommonConstant.REFRESH_TOKEN_EXPIRE_TIME, CommonConstant.REFRESH_TOKEN_UNIT);
 
         LoginAndRegisterResponse loginAndRegisterResponse = new LoginAndRegisterResponse();
         BeanUtil.copyProperties(user, loginAndRegisterResponse);
@@ -130,8 +131,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     //后续退出需要先通过jwt校验用户身份，利用拦截器拦截对应接口
     @Override
     public Boolean logout(String userId) {
-        stringRedisTemplate.delete(UserConstant.ACCESS_TOKEN_PREFIX + userId);
-        stringRedisTemplate.delete(UserConstant.REFRESH_TOKEN_PREFIX + userId);
+        stringRedisTemplate.delete(CommonConstant.ACCESS_TOKEN_PREFIX + userId);
+        stringRedisTemplate.delete(CommonConstant.REFRESH_TOKEN_PREFIX + userId);
         return true;
     }
 
@@ -139,11 +140,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public TokenResponse refreshToken(String refreshToken) {
         Claims claims = JwtUtil.parse(refreshToken);
         String userId = claims.getSubject();
-        String redisRefreshToken = stringRedisTemplate.opsForValue().get(UserConstant.REFRESH_TOKEN_PREFIX + userId);
+        String redisRefreshToken = stringRedisTemplate.opsForValue().get(CommonConstant.REFRESH_TOKEN_PREFIX + userId);
         if(StringUtils.isBlank(redisRefreshToken) || !redisRefreshToken.equals(refreshToken))
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
-        String accessToken = JwtUtil.generate(userId, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
-        stringRedisTemplate.opsForValue().set(UserConstant.ACCESS_TOKEN_PREFIX + userId, accessToken, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
+        String accessToken = JwtUtil.generate(userId, CommonConstant.ACCESS_TOKEN_EXPIRE_TIME, CommonConstant.ACCESS_TOKEN_UNIT);
+        stringRedisTemplate.opsForValue().set(CommonConstant.ACCESS_TOKEN_PREFIX + userId, accessToken, CommonConstant.ACCESS_TOKEN_EXPIRE_TIME, CommonConstant.ACCESS_TOKEN_UNIT);
         TokenResponse tokenResponse = new TokenResponse();
         tokenResponse.setAccessToken(accessToken);
         tokenResponse.setRefreshToken(refreshToken);

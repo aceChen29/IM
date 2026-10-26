@@ -11,7 +11,7 @@ import com.ace.im.user.model.dto.UserRegisterRequest;
 import com.ace.im.user.model.vo.LoginAndRegisterResponse;
 import com.ace.im.user.model.vo.TokenResponse;
 import com.ace.im.user.service.UserService;
-import com.ace.im.user.utils.JwtUtil;
+import com.ace.im.common.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;

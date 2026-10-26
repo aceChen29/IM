@@ -13,17 +13,6 @@
     <artifactId>AiService</artifactId>
 
     <dependencies>
-        <!-- Web 接口相关依赖 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <!-- 测试相关依赖 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
         <!-- 通义千问模型接入 -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
