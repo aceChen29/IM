@@ -207,3 +207,30 @@ CREATE TABLE `red_packet_receive`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci COMMENT = '红包领取记录表'
   ROW_FORMAT = Dynamic;
+
+
+
+INSERT INTO `user` (`user_id`, `email`, `password`, `nickname`)
+VALUES ('11', '1812872960@qq.com', '$2a$10$gF5mJtVIughTy2C2c62tMuxFYY6DbjTVwKz2sXt3a/eH17j30tXGG', '单聊1'),
+       ('12','1812872961@qq.com', '$2a$10$gF5mJtVIughTy2C2c62tMuxFYY6DbjTVwKz2sXt3a/eH17j30tXGG', '单聊2'),
+       ('21','1812872962@qq.com', '$2a$10$gF5mJtVIughTy2C2c62tMuxFYY6DbjTVwKz2sXt3a/eH17j30tXGG', '群聊1'),
+       ('22','1812872963@qq.com', '$2a$10$gF5mJtVIughTy2C2c62tMuxFYY6DbjTVwKz2sXt3a/eH17j30tXGG', '群聊2'),
+       ('23','1812872964@qq.com', '$2a$10$gF5mJtVIughTy2C2c62tMuxFYY6DbjTVwKz2sXt3a/eH17j30tXGG', '群聊3');
+
+
+
+INSERT INTO `session` (`session_id`, `type`, `status`)
+VALUES ('1', '0', '0');
+
+
+
+INSERT INTO `session` (`session_id`, `name`, `type`, `status`)
+VALUES ('2', '群聊', '1', '0');
+
+
+INSERT INTO `user_session` (`user_id`, `session_id`,`role`, `status`)
+VALUES ('11', '1', '2', '0'),
+       ('12', '1', '2', '0'),
+       ('21', '2', '0', '0'),
+       ('22', '2', '2', '0'),
+       ('23', '2', '2', '0');

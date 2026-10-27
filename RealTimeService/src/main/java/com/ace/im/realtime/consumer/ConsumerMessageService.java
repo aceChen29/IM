@@ -3,21 +3,27 @@ package com.ace.im.realtime.consumer;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.json.JSONUtil;
 
+import com.ace.im.common.common.BaseResponse;
 import com.ace.im.common.constant.SessionTypeConstant;
 import com.ace.im.common.model.dto.MessageRequest;
 import com.ace.im.common.model.vo.MessageResponse;
 import com.ace.im.common.utils.FormatDateUtil;
 import com.ace.im.realtime.utils.ChannelManager;
+import com.ace.im.user.api.client.UserServiceClient;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ConsumerMessageService {
 /*
 发送方通过自己的 WebSocket 连接发消息
@@ -26,6 +32,8 @@ public class ConsumerMessageService {
 → 分别找到发送方和接收方的 Channel
 → 通过两个 Channel 把消息推送回各自的客户端
 * */
+    private final UserServiceClient userServiceClient;
+
     // Spring Kafka 为这个方法创建消费者并订阅 message-topic；有新消息时，框架把消息内容传入 message 参数并调用此方法。
     // groupId 是消费组 ID：同一组的多个消费者共同消费该 topic，而不是每个消费者都收到一份。
     // 每个实例从配置读取自己的消费组 ID；多实例使用不同组，使各实例都能收到消息并检查本地 Channel。
@@ -52,9 +60,19 @@ public class ConsumerMessageService {
 
     }
 
-    // 群聊推送逻辑尚未实现。
+
     public void groupMessage(MessageRequest messageRequest) {
-        // todo
+        Long sessionId = messageRequest.getSessionId();
+        //根据sessionId得到对应群聊里的userId openFeign
+        List<Long> userIds = userServiceClient.getUserIdBySessionId(sessionId);
+
+        MessageResponse messageResponse = new MessageResponse();
+        BeanUtil.copyProperties(messageRequest, messageResponse);
+        messageResponse.setCreatedTime(FormatDateUtil.formatDate(messageRequest.getCreatedTime()));
+        //循环遍历userIds 将消息推送到对应channel
+        for(Long userId : userIds){
+            pushMessageToUser(messageResponse, userId);
+        }
     }
 
 

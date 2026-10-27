@@ -1,6 +1,7 @@
 package com.ace.im.common.model.vo;
 
 
+import com.ace.im.common.model.dto.MessageBody;
 import lombok.Data;
 
 @Data
@@ -35,4 +36,6 @@ public class MessageResponse {
 
     /** 发送者的角色标识；具体取值由业务场景定义。 */
     private Integer role;
+
+    private MessageBody body;
 }

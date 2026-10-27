@@ -32,4 +32,5 @@ public class MessageRequest {
     /** 客户端生成的消息 ID，用于关联客户端消息与服务端返回的消息。 */
     private String clientMessageId;
 
+    private MessageBody body;
 }

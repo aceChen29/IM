@@ -56,9 +56,9 @@ public class NettyServer {
                         //writerIdleTimeSeconds: 写超时. 即当在指定的时间间隔内没有数据写入到 Channel 时, 会触发一个 WRITER_IDLE 的 IdleStateEvent 事件.
                         //allIdleTimeSeconds: 读/写超时. 即当在指定的时间间隔内没有读或写操作时, 会触发一个 ALL_IDLE 的 IdleStateEvent 事件.
 
-                        // 双向处理器：可监测入站读和出站写；这里只启用读空闲检测，60 秒未收到数据时触发 READER_IDLE 事件，两个 0 表示不检测写空闲和读写空闲。
+                        // 双向处理器：可监测入站读和出站写；这里只启用读空闲检测，60 秒未收到数据时触发 READER_IDLE 事件，两个 0 表示不检测写空闲和读写空闲。 测试时间为5分钟便于测试
                         //空闲状态处理器 ：关键是放在处理空闲事件的 WebSocketHandler 前面。当前放法还意味着：HTTP 握手期间收到的数据也算作“有读取”，60 秒计时关注的是整个连接的读取活动，而不只是业务文本消息
-                        .addLast(new IdleStateHandler(60, 0, 0))
+                        .addLast(new IdleStateHandler(60 * 5, 0, 0))
                         // 双向：入站把 HTTP 字节解码成请求/内容；出站把 HTTP 响应编码成字节。
                         .addLast(new HttpServerCodec())
                         // 入站：把分段的 HTTP 请求聚合成 FullHttpRequest；最大聚合长度为 65536 字节。
