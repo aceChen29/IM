@@ -1,4 +1,5 @@
-package com.ace.im.ai.common;
+package com.ace.im.common.common;
+
 
 /**
  * 自定义错误码
@@ -34,13 +35,13 @@ public enum ErrorCode {
     LOGIN_ERROR_CODE(70004, "验证码错误"),
     LOGIN_ERROR(70005, "登录失败, 用户名或密码错误"),
     LoginPasswordError(70006, "两次密码不一致"),
+    LOGIN_SEND_CODE_ERROR(70007,"验证码已发送"),
 
     // ============ WebSocket 参数错误码（90xxx）============
     SIGNAL_TYPE_ERROR(90000, "单聊消息必须指定接收者"),
     GROUP_TYPE_ERROR(90001, "群聊消息不需要指定接收者"),
     INVALID_TOKEN(90003, "无效token，请重新登录"),
     USER_EMAIL_LIST_EMPTY(90004, "用户邮箱列表为空，请检查用户服务是否正常或没有用户注册");
-
     /**
      * 状态码
      */
@@ -63,5 +64,4 @@ public enum ErrorCode {
     public String getMessage() {
         return message;
     }
-
 }

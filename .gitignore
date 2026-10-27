@@ -4,6 +4,7 @@ HELP.md
 /id_ed25519
 /id_ed25519.pub
 target/
+/out/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

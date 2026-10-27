@@ -1,10 +1,12 @@
 package com.ace.im.user.controller;
 
-import com.ace.im.user.common.BaseResponse;
-import com.ace.im.user.common.ErrorCode;
-import com.ace.im.user.common.ResultUtils;
+
+import com.ace.im.common.common.BaseResponse;
+import com.ace.im.common.common.ErrorCode;
+import com.ace.im.common.common.ResultUtils;
+import com.ace.im.common.exception.BusinessException;
 import com.ace.im.user.constants.UserConstant;
-import com.ace.im.user.exception.BusinessException;
+
 import com.ace.im.user.model.dto.UserLoginCodeRequest;
 import com.ace.im.user.model.dto.UserLoginPasswordRequest;
 import com.ace.im.user.model.dto.UserRegisterRequest;
@@ -69,5 +71,11 @@ public class UserController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
 
         return ResultUtils.success(userService.refreshToken(refreshToken));
+    }
+
+    //实现断线重连接口 不用重新登陆
+    @GetMapping("/refresh/uri")
+    public BaseResponse<String> refreshUri(@RequestParam Long userId) {
+        return ResultUtils.success(userService.refreshUri(userId));
     }
 }

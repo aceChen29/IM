@@ -1,6 +1,7 @@
-package com.ace.im.user.exception;
+package com.ace.im.common.exception;
 
-import com.ace.im.user.common.ErrorCode;
+
+import com.ace.im.common.common.ErrorCode;
 
 public class BusinessException extends RuntimeException {
 

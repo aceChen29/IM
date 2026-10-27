@@ -28,7 +28,8 @@ public class ConsumerMessageService {
 * */
     // Spring Kafka 为这个方法创建消费者并订阅 message-topic；有新消息时，框架把消息内容传入 message 参数并调用此方法。
     // groupId 是消费组 ID：同一组的多个消费者共同消费该 topic，而不是每个消费者都收到一份。
-    @KafkaListener(topics = "message-topic", groupId = "infinite-chat-push-group-0")
+    // 每个实例从配置读取自己的消费组 ID；多实例使用不同组，使各实例都能收到消息并检查本地 Channel。
+    @KafkaListener(topics = "message-topic", groupId = "${im.kafka.push-group-id}")
     public void consume(String message) {
         System.out.println("收到序列化消息：" + message);
         // Kafka 中存的是 JSON 字符串，先还原成业务对象，再根据会话类型选择推送方式。

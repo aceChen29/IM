@@ -3,5 +3,59 @@ spring:
     name: GateWay
   profiles:
     active: dev
+  # Gateway 使用 WebFlux；这里指定以响应式 Web 应用启动。
+  main:
+    web-application-type: reactive
+  cloud:
+    nacos:
+      discovery:
+        # Nacos 注册中心地址：宿主机 18375 映射到容器内 8848。
+        server-addr: ${SERVER_ADDR:localhost:18375}
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            # 连接下游服务的超时时间，单位毫秒。
+            connect-timeout: 60000
+            # 等待下游 HTTP 响应的超时时间，使用 Duration 格式。
+            response-timeout: 60s
+          globalcors:
+            # 让未匹配路由的预检请求（OPTIONS）也能应用全局跨域配置。
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              # 对网关下的所有路径应用这组跨域规则。
+              '[/**]':
+                # 浏览器页面的来源地址；前端部署在其他地址时需改为实际 Origin。
+                allowedOrigins:
+                  - "http://localhost:10010"
+                # 允许浏览器跨域使用的 HTTP 方法。后端放行 CORS，或者通过前端代理/Nginx 代理让它看起来同源
+                allowedMethods:
+                  - "GET"
+                  - "POST"
+                  - "PUT"
+                  - "DELETE"
+                  - "PATCH"
+                  - "OPTIONS"
+                # 允许所有请求头，并允许携带 Cookie 等凭据。
+                allowedHeaders:
+                  - "*"
+                allowCredentials: true
+                # 浏览器缓存预检结果的时间，单位秒。
+                maxAge: 36000
+          routes:
+            # lb:// 按服务名从注册中心选择实例；Path 决定匹配哪些请求。
+            - id: UserService
+              uri: lb://UserService
+              predicates:
+                - Path=/api/user/**
+            - id: OfflineDataService
+              uri: lb://OfflineDataService
+              predicates:
+                - Path=/api/offline/**
+            - id: AiService
+              uri: lb://AiService
+              predicates:
+                - Path=/api/ai/**
 server:
+  # Gateway 自身监听的 HTTP 端口。
   port: 10010

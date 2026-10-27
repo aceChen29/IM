@@ -1,14 +1,10 @@
-package com.ace.im.ai.common;
-
-import java.io.Serializable;
+package com.ace.im.common.common;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * 通用返回类
- *
- */
+import java.io.Serializable;
+
 @Data
 @NoArgsConstructor
 public class BaseResponse<T> implements Serializable {

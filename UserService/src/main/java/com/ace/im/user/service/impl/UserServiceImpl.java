@@ -2,10 +2,13 @@ package com.ace.im.user.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.crypto.digest.BCrypt;
-import com.ace.im.user.common.ErrorCode;
+
+import com.ace.im.common.common.ErrorCode;
 import com.ace.im.common.constant.CommonConstant;
+import com.ace.im.common.exception.BusinessException;
 import com.ace.im.user.constants.UserConstant;
-import com.ace.im.user.exception.BusinessException;
+
+import com.ace.im.user.loadbalancer.NettyServiceLocator;
 import com.ace.im.user.model.dto.UserLoginCodeRequest;
 import com.ace.im.user.model.dto.UserLoginPasswordRequest;
 import com.ace.im.user.model.dto.UserRegisterRequest;
@@ -37,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService{
     private final EmailUtil emailUtil;
     private final StringRedisTemplate stringRedisTemplate;
+
+    private  final NettyServiceLocator serviceInstanceUtil;
 
     @Override
     public void sendCapcha(String targetEmail) {
@@ -96,12 +101,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String refreshToken = JwtUtil.generate(userId, CommonConstant.REFRESH_TOKEN_EXPIRE_TIME, CommonConstant.REFRESH_TOKEN_UNIT);
         stringRedisTemplate.opsForValue().set(CommonConstant.ACCESS_TOKEN_PREFIX + userId, accessToken, CommonConstant.ACCESS_TOKEN_EXPIRE_TIME, CommonConstant.ACCESS_TOKEN_UNIT);
         stringRedisTemplate.opsForValue().set(CommonConstant.REFRESH_TOKEN_PREFIX + userId, refreshToken, CommonConstant.REFRESH_TOKEN_EXPIRE_TIME, CommonConstant.REFRESH_TOKEN_UNIT);
-        LoginAndRegisterResponse response = new LoginAndRegisterResponse();
-        BeanUtil.copyProperties(user, response);
-        response.setAccessToken(accessToken);
-        response.setRefreshToken(refreshToken);
 
-        return response;
+        LoginAndRegisterResponse loginAndRegisterResponse = new LoginAndRegisterResponse();
+        BeanUtil.copyProperties(user, loginAndRegisterResponse);
+        String nettyUri = serviceInstanceUtil.getServiceInstance(loginAndRegisterResponse.getUserId().toString());
+        loginAndRegisterResponse.setNettyUri(nettyUri);
+        loginAndRegisterResponse.setAccessToken(accessToken);
+        loginAndRegisterResponse.setRefreshToken(refreshToken);
+
+        return loginAndRegisterResponse;
     }
 
     @Override
@@ -124,6 +132,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         LoginAndRegisterResponse loginAndRegisterResponse = new LoginAndRegisterResponse();
         BeanUtil.copyProperties(user, loginAndRegisterResponse);
+        String nettyUri = serviceInstanceUtil.getServiceInstance(loginAndRegisterResponse.getUserId().toString());
+        loginAndRegisterResponse.setNettyUri(nettyUri);
         loginAndRegisterResponse.setAccessToken(accessToken);
         loginAndRegisterResponse.setRefreshToken(refreshToken);
         return loginAndRegisterResponse;
@@ -150,6 +160,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         tokenResponse.setRefreshToken(refreshToken);
 
         return tokenResponse;
+    }
+
+    @Override
+    public String refreshUri(Long userId) {
+        return serviceInstanceUtil.getServiceInstance(String.valueOf(userId));
     }
 
 

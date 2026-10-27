@@ -3,5 +3,16 @@ spring:
     name: RealTimeService
   profiles:
     active: dev
+  cloud:
+    nacos:
+      discovery:
+        # Nacos 注册中心地址：宿主机 18375 映射到容器内 8848。
+        server-addr: ${SERVER_ADDR:localhost:18375}
 server:
   port: 8102
+
+im:
+  kafka:
+    # 单实例默认使用 group-0；多实例时，每台通过 IM_KAFKA_PUSH_GROUP_ID 设置不同消费组。
+    # 例如实例 A 用 infinite-chat-push-group-0，实例 B 用 infinite-chat-push-group-1。
+    push-group-id: ${IM_KAFKA_PUSH_GROUP_ID:infinite-chat-push-group-0}

@@ -1,4 +1,6 @@
-package com.ace.im.user.common;
+package com.ace.im.common.common;
+
+
 
 
 /**
