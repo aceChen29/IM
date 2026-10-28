@@ -3,7 +3,13 @@ package com.ace.im.offlinedata.service;
 
 import com.ace.im.common.model.dto.MessageRequest;
 import com.ace.im.common.model.entity.Message;
+import com.ace.im.common.model.vo.MessageResponse;
+import com.ace.im.offlinedata.model.dto.HistoryMessageRequest;
+import com.ace.im.offlinedata.model.dto.OfflineMessageRequest;
 import com.baomidou.mybatisplus.extension.service.IService;
+
+import java.util.List;
+import java.util.Map;
 
 /**
 * @author cy
@@ -13,4 +19,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 public interface MessageService extends IService<Message> {
 
     void saveMessageToMySQL(MessageRequest messageRequest);
+
+    Map<Long, List<MessageResponse>> getOfflineMessages(OfflineMessageRequest request);
+
+    List<MessageResponse> getHistoryMessages(HistoryMessageRequest request);
 }

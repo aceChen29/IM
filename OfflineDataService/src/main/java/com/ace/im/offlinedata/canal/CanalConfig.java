@@ -1,4 +1,4 @@
-package com.ace.im.offlinedata.config;
+package com.ace.im.offlinedata.canal;
 
 import java.net.InetSocketAddress;
 

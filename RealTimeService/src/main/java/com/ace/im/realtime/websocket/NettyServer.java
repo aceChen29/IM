@@ -70,7 +70,7 @@ public class NettyServer {
                         // 普通文本/二进制帧继续交给后面的业务处理器，帧的编解码由协议处理器配置。
                         .addLast(new WebSocketServerProtocolHandler("/ws/netty"))
                         // 入站：自定义处理器接收 TextWebSocketFrame，当前实现会打印帧里的文本。
-                        .addLast(new WebSocketHandler(kafkaTemplate));
+                        .addLast(new WebSocketHandler(kafkaTemplate, stringRedisTemplate));
 
             }
         });

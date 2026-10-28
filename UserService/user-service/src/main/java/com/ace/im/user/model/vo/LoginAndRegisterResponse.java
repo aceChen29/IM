@@ -27,4 +27,6 @@ public class LoginAndRegisterResponse {
      * 当前登录和注册实现尚未给此字段赋值，返回时可能为 null。
      */
     private String nettyUri;
+    //记录上次断开ws连接 离线时间
+    private Long offlineTime;
 }

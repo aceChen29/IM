@@ -51,11 +51,12 @@ spring:
             - id: OfflineDataService
               uri: lb://OfflineDataService
               predicates:
-                - Path=/api/offline/**
+                - Path=/api/message/**
             - id: AiService
               uri: lb://AiService
               predicates:
                 - Path=/api/ai/**
+
 server:
   # Gateway 自身监听的 HTTP 端口。
   port: 10010

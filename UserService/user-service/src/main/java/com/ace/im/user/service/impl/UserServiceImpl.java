@@ -27,6 +27,8 @@ import com.ace.im.user.mapper.UserMapper;
 import io.jsonwebtoken.Claims;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 * @description 针对表【user】的数据库操作Service实现
 * @createDate 2026-10-24 13:53:29
 */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService{
@@ -100,18 +103,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user == null || !BCrypt.checkpw(password, user.getPassword())) {
             throw new BusinessException(ErrorCode.LOGIN_ERROR);
         }
-        String userId = user.getUserId().toString();
-        String accessToken = JwtUtil.generate(userId, CommonConstant.ACCESS_TOKEN_EXPIRE_TIME, CommonConstant.ACCESS_TOKEN_UNIT);
-        String refreshToken = JwtUtil.generate(userId, CommonConstant.REFRESH_TOKEN_EXPIRE_TIME, CommonConstant.REFRESH_TOKEN_UNIT);
-        stringRedisTemplate.opsForValue().set(CommonConstant.ACCESS_TOKEN_PREFIX + userId, accessToken, CommonConstant.ACCESS_TOKEN_EXPIRE_TIME, CommonConstant.ACCESS_TOKEN_UNIT);
-        stringRedisTemplate.opsForValue().set(CommonConstant.REFRESH_TOKEN_PREFIX + userId, refreshToken, CommonConstant.REFRESH_TOKEN_EXPIRE_TIME, CommonConstant.REFRESH_TOKEN_UNIT);
-
-        LoginAndRegisterResponse loginAndRegisterResponse = new LoginAndRegisterResponse();
-        BeanUtil.copyProperties(user, loginAndRegisterResponse);
-        String nettyUri = serviceInstanceUtil.getServiceInstance(loginAndRegisterResponse.getUserId().toString());
-        loginAndRegisterResponse.setNettyUri(nettyUri);
-        loginAndRegisterResponse.setAccessToken(accessToken);
-        loginAndRegisterResponse.setRefreshToken(refreshToken);
+        LoginAndRegisterResponse loginAndRegisterResponse = getLoginAndRegisterResponse(user);
 
         return loginAndRegisterResponse;
     }
@@ -128,6 +120,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if(StringUtils.isBlank(redisCode) || !randomCode.equals(redisCode))
             throw new BusinessException(ErrorCode.LOGIN_ERROR_CODE);
         stringRedisTemplate.delete(email);
+        LoginAndRegisterResponse loginAndRegisterResponse = getLoginAndRegisterResponse(user);
+        return loginAndRegisterResponse;
+    }
+
+    private @NonNull LoginAndRegisterResponse getLoginAndRegisterResponse(User user) {
         String userId = user.getUserId().toString();
         String accessToken = JwtUtil.generate(userId, CommonConstant.ACCESS_TOKEN_EXPIRE_TIME, CommonConstant.ACCESS_TOKEN_UNIT);
         String refreshToken = JwtUtil.generate(userId, CommonConstant.REFRESH_TOKEN_EXPIRE_TIME, CommonConstant.REFRESH_TOKEN_UNIT);
@@ -140,8 +137,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         loginAndRegisterResponse.setNettyUri(nettyUri);
         loginAndRegisterResponse.setAccessToken(accessToken);
         loginAndRegisterResponse.setRefreshToken(refreshToken);
+        String timestamp = stringRedisTemplate.opsForValue().getAndDelete(CommonConstant.OFFLINE_KEY_REDIS + userId);
+
+        if(StringUtils.isBlank(timestamp))
+            log.debug("用户 {} 无离线时间记录", userId);
+        else{
+            loginAndRegisterResponse.setOfflineTime(Long.valueOf(timestamp));
+            log.info("用户 {} 上线，离线时间: {}", userId, timestamp);
+        }
         return loginAndRegisterResponse;
     }
+
     //后续退出需要先通过jwt校验用户身份，利用拦截器拦截对应接口
     @Override
     public Boolean logout(String userId) {
@@ -198,6 +204,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setAvatar(updateAvatarRequest.getUri());
         return updateById(user);
     }
+
+
 
 
 }

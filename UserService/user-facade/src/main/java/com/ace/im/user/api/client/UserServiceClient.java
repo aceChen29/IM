@@ -19,5 +19,8 @@ public interface UserServiceClient {
     BaseResponse<String> refreshNettyUri(@RequestParam("userId") Long userId);
 
     @GetMapping("/api/user/get/receivers")
-    List<Long> getUserIdBySessionId(@RequestParam("sessionId")  Long sessionId);//按照教程不反悔baseResponse
+    List<Long> getUserIdBySessionId(@RequestParam("sessionId")  Long sessionId);//按照教程不反回baseResponse
+
+    @GetMapping("/api/user/get/sessions")
+    List<Long> getSessionIdsByUserId(@RequestParam("userId")  Long userId);
 }

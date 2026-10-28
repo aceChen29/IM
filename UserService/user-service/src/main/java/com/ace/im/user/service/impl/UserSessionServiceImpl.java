@@ -21,4 +21,11 @@ public class UserSessionServiceImpl extends ServiceImpl<UserSessionMapper, UserS
                 .map(UserSession::getUserId).toList();
         return userIds;
     }
+
+    @Override
+    public List<Long> getSessionIdsByUserId(Long userId) {
+        List<Long> sessionIds = lambdaQuery().select(UserSession::getSessionId).eq(UserSession::getUserId, userId)
+                .list().stream().map(UserSession::getSessionId).toList();
+        return sessionIds;
+    }
 }

@@ -14,6 +14,7 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.timeout.IdleStateEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
 
 import java.util.Date;
@@ -23,6 +24,7 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
     private final KafkaTemplate<String, String> kafkaTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame textWebSocketFrame) throws Exception {
         //序列化之后的msg
@@ -145,14 +147,20 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketF
         System.out.println("clearChannel: " + channel.id());
         String userId = ChannelManager.getUserIdByChannel(channel);
         try {
-            if(StringUtils.isNotBlank(userId))
-                ChannelManager.removeUserChannel(userId);
+            if(StringUtils.isBlank(userId)) return;
+            ChannelManager.removeUserChannel(userId);
             ChannelManager.removeChannelUser(channel);
+            //用户ws断线时记录断线时间到redis
+            long timestamp = System.currentTimeMillis();
+            stringRedisTemplate.opsForValue().set(CommonConstant.OFFLINE_KEY_REDIS + userId, String.valueOf(timestamp));
+            log.debug("记录用户离线时间: userId={}, timestamp={}", userId, timestamp);
         } catch (Exception e) {
             log.error("clearChannel failed for channel: {}, userId: {}", channel.id(), userId, e);
         } finally {
+
             if(channel.isActive())
                 channel.close();
+
         }
 
     }

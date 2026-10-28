@@ -1,28 +1,22 @@
 package com.ace.im.common.utils;
 
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.TimeZone;
 
 public class FormatDateUtil {
 
-
+    private static final ZoneId SHANGHAI_ZONE = ZoneId.of("Asia/Shanghai");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public static String formatDate(Date date) {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        formatter.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
-        return formatter.format(date);
+        return DATE_TIME_FORMATTER.format(date.toInstant().atZone(SHANGHAI_ZONE));
     }
 
-
     public static long parseDateTimeToMillis(String dateTimeStr) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        LocalDateTime localDateTime = LocalDateTime.parse(dateTimeStr, formatter);
-        ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of("Asia/Shanghai"));
-        return zonedDateTime.toInstant().toEpochMilli();
+        LocalDateTime localDateTime = LocalDateTime.parse(dateTimeStr, DATE_TIME_FORMATTER);
+        return localDateTime.atZone(SHANGHAI_ZONE).toInstant().toEpochMilli();
     }
 }
