@@ -13,10 +13,19 @@
     <name>Common</name>
     <description>Common</description>
     <dependencies>
-        <!-- 公共模型只使用 MyBatis-Plus 注解，不启动数据库自动配置。 -->
+        <!-- 公共模型使用 MyBatis-Plus 注解及分页类型，不启动数据库自动配置。 -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-annotation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-extension</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+            <version>${mybatis-plus.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -25,6 +34,11 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
+        </dependency>
+        <!-- LogInterceptor 中的 @Aspect、@Around 和 ProceedingJoinPoint。 -->
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjrt</artifactId>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>

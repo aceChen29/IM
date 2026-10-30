@@ -15,7 +15,7 @@ import lombok.Data;
 @Data
 public class User {
     /**
-     * 
+     * 用户 ID：由 MyBatis-Plus 在插入前使用雪花算法生成，好友关系和好友申请引用此 ID。
      */
     @TableId
     private Long userId;

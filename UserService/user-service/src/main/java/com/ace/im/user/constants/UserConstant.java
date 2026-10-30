@@ -22,4 +22,8 @@ public class UserConstant {
 
     public static final Integer DATA_CENTER_ID = 1;
 
+    public static final String PHONE_REGEX = "^1[3-9]\\d{9}$";
+
+    public static final Integer USER_TIME = 3;
+
 }

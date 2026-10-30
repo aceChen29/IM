@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS `user_session` (
 CREATE TABLE IF NOT EXISTS `friend` (
   `user_id` bigint NOT NULL,
   `friend_id` bigint NOT NULL,
+  `session_id` bigint DEFAULT NULL,
   `status` tinyint NOT NULL DEFAULT 0,
   `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

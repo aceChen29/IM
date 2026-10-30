@@ -137,6 +137,7 @@ CREATE TABLE `friend`
 (
     `user_id`      BIGINT   NOT NULL COMMENT '用户 ID',
     `friend_id`    BIGINT   NOT NULL COMMENT '好友 ID',
+    `session_id`   BIGINT   NULL COMMENT '双方单聊会话 ID',
     `status`       TINYINT  NOT NULL DEFAULT 0 COMMENT '好友状态：0好友，1拉黑，2删除',
     `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',

@@ -8,6 +8,7 @@ import com.ace.im.common.common.ResultUtils;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -67,5 +68,11 @@ public class GlobalExceptionHandler {
         // 直接从异常信息里获取提示内容返回给前端
         // 或者统一返回 SENSITIVE_WORD_ERROR
         return ResultUtils.error(ErrorCode.SENSITIVE_WORD_ERROR);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public BaseResponse<?> handleHttpMessageNotReadable(HttpMessageNotReadableException e) {
+        log.error("请求体解析失败: {}", e.getMessage());
+        return ResultUtils.error(ErrorCode.INVALID_PARAMETER_ERROR, "请求体格式错误或为空");
     }
 }

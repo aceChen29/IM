@@ -41,4 +41,14 @@ public class CommonConstant {
     public static final Long SEVEN_DAYS_MILLIS = 7L * 24 * 60 * 60 * 1000;
 
     public static final Integer DEFAULT_LIMIT = 20;
+
+    /**
+     * 系统通知消息 Kafka 主题
+     */
+    public static final String KAFKA_SYSTEM_NOTIFICATION_TOPIC = "system-notification-topic";
+
+    /**
+     * 系统通知持久化 Kafka 主题
+     */
+    public static final String KAFKA_STORE_NOTIFICATION_TOPIC = "store-notification-topic";
 }
