@@ -2,6 +2,8 @@ package com.ace.im.user.service;
 
 
 import com.ace.im.user.model.entity.Session;
+import com.ace.im.user.model.dto.CreateGroupRequest;
+import com.ace.im.user.model.dto.CreateGroupResponse;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
@@ -10,5 +12,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
 * @createDate 2026-10-28 22:50:42
 */
 public interface SessionService extends IService<Session> {
-
+    CreateGroupResponse createGroup(CreateGroupRequest request);
 }

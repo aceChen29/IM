@@ -5,7 +5,9 @@ import com.ace.im.common.model.dto.MessageRequest;
 import com.ace.im.common.model.entity.Message;
 import com.ace.im.common.model.vo.MessageResponse;
 import com.ace.im.offlinedata.model.dto.HistoryMessageRequest;
+import com.ace.im.offlinedata.model.dto.MessageSearchRequest;
 import com.ace.im.offlinedata.model.dto.OfflineMessageRequest;
+import com.ace.im.offlinedata.model.vo.MessageSearchResponse;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
@@ -23,4 +25,6 @@ public interface MessageService extends IService<Message> {
     Map<Long, List<MessageResponse>> getOfflineMessages(OfflineMessageRequest request);
 
     List<MessageResponse> getHistoryMessages(HistoryMessageRequest request);
+
+    MessageSearchResponse search(MessageSearchRequest request);
 }

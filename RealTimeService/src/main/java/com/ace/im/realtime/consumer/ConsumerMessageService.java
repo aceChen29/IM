@@ -29,7 +29,7 @@ public class ConsumerMessageService {
 发送方通过自己的 WebSocket 连接发消息
 → Netty 的 WebSocketHandler 收到消息并写入 Kafka 的 message-topic
 → ConsumerMessageService 消费这条消息
-→ 分别找到发送方和接收方的 Channel
+→ 分别找到发送方和接收方的 Channel 通过currenthashmap的映射
 → 通过两个 Channel 把消息推送回各自的客户端
 * */
     private final UserServiceClient userServiceClient;

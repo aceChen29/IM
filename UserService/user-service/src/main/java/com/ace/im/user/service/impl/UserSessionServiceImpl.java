@@ -28,4 +28,12 @@ public class UserSessionServiceImpl extends ServiceImpl<UserSessionMapper, UserS
                 .list().stream().map(UserSession::getSessionId).toList();
         return sessionIds;
     }
+
+    @Override
+    public int getGroupMemberCount(Long sessionId) {
+        return Math.toIntExact(lambdaQuery()
+                .eq(UserSession::getSessionId, sessionId)
+                .eq(UserSession::getStatus, 0)
+                .count());
+    }
 }

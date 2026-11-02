@@ -1,10 +1,12 @@
 package com.ace.im.offlinedata.canal;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.json.JSONUtil;
 import com.ace.im.common.constant.CommonConstant;
 import com.ace.im.common.model.dto.MessageBody;
 import com.ace.im.common.model.vo.MessageResponse;
 import com.ace.im.common.utils.FormatDateUtil;
+import com.ace.im.offlinedata.model.po.MessageDoc;
 import com.alibaba.otter.canal.client.CanalConnector;
 import com.alibaba.otter.canal.protocol.CanalEntry;
 import com.alibaba.otter.canal.protocol.Message;
@@ -13,14 +15,17 @@ import jakarta.annotation.Resource;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,6 +62,8 @@ public class CanalClient implements CommandLineRunner {
     private static final long IDLE_CHECK_INTERVAL = 5000; // 5秒检查一次空闲状态
     // 需要监听的表名集合
     private static final Set<String> MONITOR_TABLES = Set.of("infinitechat.message");
+    @Resource
+    private KafkaTemplate<String, String> kafkaTemplate;
 
     @Override
     public void run(String... args) {
@@ -255,7 +262,27 @@ public class CanalClient implements CommandLineRunner {
                     return null;
                 }
             });
-
+            // 同名字段由 BeanUtil 拷贝，创建时间使用已按上海时区解析的时间戳。
+            MessageDoc messageDoc = BeanUtil.copyProperties(
+                    messageResponse, MessageDoc.class, "createdTime");
+            MessageBody body = messageResponse.getBody();
+            messageDoc.setContent(body.getContent());
+            messageDoc.setReplyId(body.getReplyId() == null
+                    ? null : body.getReplyId().toString());
+            messageDoc.setCreatedTime(new Date(createdMillis));
+            kafkaTemplate.send(CommonConstant.INDEX_TOPIC,
+                    messageDoc.getMessageId(), JSONUtil.toJsonStr(messageDoc)).whenComplete(
+                    (success, failure) -> {
+                        if (failure != null) {
+                            // 生产者生产失败
+                            System.err.println("生产者生产失败: " + failure.getMessage());
+                            // 记录日志、告警、补偿等
+                        } else {
+                            // 生产者生产成功
+                            System.out.println("生产者生产成功，offset: " + success.getRecordMetadata().offset());
+                        }
+                    }
+            );
             log.debug("消息已存入Redis, sessionId={}, messageId={}",
                     messageResponse.getSessionId(), messageResponse.getMessageId());
         } catch (Exception e) {

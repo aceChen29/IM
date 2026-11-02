@@ -8,9 +8,12 @@ import com.ace.im.common.common.BaseResponse;
 import com.ace.im.common.common.ResultUtils;
 import com.ace.im.common.model.vo.MessageResponse;
 import com.ace.im.offlinedata.model.dto.HistoryMessageRequest;
+import com.ace.im.offlinedata.model.dto.MessageSearchRequest;
 import com.ace.im.offlinedata.model.dto.OfflineMessageRequest;
+import com.ace.im.offlinedata.model.vo.MessageSearchResponse;
 import com.ace.im.offlinedata.service.MessageService;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -39,5 +42,11 @@ public class MessageController {
     public BaseResponse<List<MessageResponse>> getHistoryMessages(
             @RequestBody HistoryMessageRequest request) {
         return ResultUtils.success(messageService.getHistoryMessages(request));
+    }
+
+    @PostMapping("/search")
+    public BaseResponse<MessageSearchResponse> searchMessages(
+            @Valid @RequestBody MessageSearchRequest request) {
+        return ResultUtils.success(messageService.search(request));
     }
 }

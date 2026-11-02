@@ -10,16 +10,39 @@ import com.ace.im.common.model.dto.MessageRequest;
 import com.ace.im.common.model.vo.MessageResponse;
 import com.ace.im.common.utils.FormatDateUtil;
 import com.ace.im.offlinedata.model.dto.HistoryMessageRequest;
+import com.ace.im.offlinedata.model.dto.MessageSearchCursor;
+import com.ace.im.offlinedata.model.dto.MessageSearchRequest;
 import com.ace.im.offlinedata.model.dto.OfflineMessageRequest;
+import com.ace.im.offlinedata.model.vo.MessageSearchResponse;
+import com.ace.im.offlinedata.model.vo.MessageSearchVO;
+import com.ace.im.offlinedata.model.po.MessageDoc;
 import com.ace.im.user.api.client.UserServiceClient;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ace.im.common.model.entity.Message;
 import com.ace.im.offlinedata.service.MessageService;
 import com.ace.im.offlinedata.mapper.MessageMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.Operator;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
+import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.util.HtmlUtils;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +53,7 @@ import java.util.stream.Collectors;
 */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> implements MessageService{
 
     @Override
@@ -110,6 +134,126 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
         result.sort(Comparator.comparing(MessageResponse::getCreatedTime)
                 .thenComparing(MessageResponse::getMessageId).reversed());
         return result;
+    }
+    private final RestHighLevelClient client;
+    @Override
+    public MessageSearchResponse search(MessageSearchRequest messageSearchRequest) {
+        // 1. 检查基本查询参数，避免空关键词或非法分页数量。
+        if (messageSearchRequest == null
+                || !StringUtils.hasText(messageSearchRequest.getSessionId())
+                || !StringUtils.hasText(messageSearchRequest.getKeyword())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "会话ID和搜索关键词不能为空");
+        }
+        String keyword = messageSearchRequest.getKeyword().trim();
+        int pageSize = messageSearchRequest.getPageSize();
+        if (keyword.length() > 100 || pageSize <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "关键词最多100字，每页数量必须大于0");
+        }
+        if (messageSearchRequest.getStartTime() != null
+                && messageSearchRequest.getEndTime() != null
+                && !messageSearchRequest.getStartTime().isBefore(messageSearchRequest.getEndTime())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "起始时间必须早于结束时间");
+        }
+
+        // 2. 指定 message 索引，并先初始化查询体，才能调用 source().query(...)。
+        SearchRequest searchRequest = new SearchRequest(CommonConstant.INDEX_NAME);
+        searchRequest.source(new SearchSourceBuilder());
+
+        // filter 做精确过滤；must 对 content 分词匹配，不是 SQL 的字符串包含查询。
+        // AND 表示关键词分词后，各词之间是“且”的关系；不要求相邻或按输入顺序出现。
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery()
+                .filter(QueryBuilders.termQuery("sessionId", messageSearchRequest.getSessionId()))
+                .filter(QueryBuilders.termQuery("type", 0))
+                .must(QueryBuilders.matchQuery("content", keyword).operator(Operator.AND));
+
+        // 3. 时间范围可只传一端。先统一转成毫秒，正确处理 Z、+08:00 等时区偏移。
+        // 区间约定为 [startTime, endTime)：包含起点，不包含终点。
+        if (messageSearchRequest.getStartTime() != null) {
+            boolQuery.filter(QueryBuilders.rangeQuery("createdTime")
+                    .gte(messageSearchRequest.getStartTime().toInstant().toEpochMilli()));
+        }
+        if (messageSearchRequest.getEndTime() != null) {
+            boolQuery.filter(QueryBuilders.rangeQuery("createdTime")
+                    .lt(messageSearchRequest.getEndTime().toInstant().toEpochMilli()));
+        }
+        // 只设置一次顶层 query。再次 query(rangeQuery) 会覆盖上面的 bool 条件。
+        searchRequest.source().query(boolQuery);
+
+        // 4. 同毫秒的消息再用唯一 messageId 排序，保证翻页位置明确。
+        // 多取一条仅用于判断 hasMore，不返回给前端，也不计算精确总数。
+        searchRequest.source()
+                .sort("createdTime", SortOrder.DESC)
+                .sort("messageId", SortOrder.DESC)
+                .size(pageSize + 1)
+                // 不统计匹配消息的总条数；是否有下一页由多取的那一条判断。
+                .trackTotalHits(false)
+                // 设置 ES 查询超时为 3 秒，不是 HTTP 请求全过程的硬性 3 秒截止。
+                // ES 超时可能返回部分结果，下面检查 isTimedOut() 后会提示重试。
+                .timeout(TimeValue.timeValueSeconds(3));
+
+        // 第一页不传 cursor；下一页使用上次返回的两个 ES sort 值。
+        MessageSearchCursor cursor = messageSearchRequest.getCursor();
+        if (cursor != null) {
+            if (cursor.getCreatedTime() == null || cursor.getCreatedTime() <= 0
+                    || !StringUtils.hasText(cursor.getMessageId())) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "分页游标必须包含时间和消息ID");
+            }
+            searchRequest.source().searchAfter(new Object[]{
+                    cursor.getCreatedTime(), cursor.getMessageId()
+            });
+        }
+
+        // 5. 高亮完整正文。先转义原文中的 HTML，再用受控的 em 标签标记匹配词。
+        searchRequest.source().highlighter(new HighlightBuilder()
+                .encoder("html")
+                .preTags("<em>").postTags("</em>")
+                .field(new HighlightBuilder.Field("content").numOfFragments(0)));//不切分为片段
+
+        try {
+            // 6. 同步执行搜索；超时或分片失败时不能当成“没有匹配消息”。
+            SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+            if (searchResponse.isTimedOut() || searchResponse.getFailedShards() > 0) {
+                throw new BusinessException(ErrorCode.SYSTEM_BUSY, "搜索暂不可用，请稍后重试");
+            }
+            SearchHit[] hits = searchResponse.getHits().getHits();
+            boolean hasMore = hits.length > pageSize;
+            int count = Math.min(hits.length, pageSize);
+            List<MessageSearchVO> records = new ArrayList<>(count);
+
+            // 7. _source 保留原文，高亮从独立的 highlight 字段中获取。
+            for (int i = 0; i < count; i++) {
+                SearchHit hit = hits[i];
+                MessageDoc doc = JSONUtil.toBean(hit.getSourceAsString(), MessageDoc.class);
+                MessageSearchVO vo = BeanUtil.copyProperties(doc, MessageSearchVO.class, "createdTime");
+                vo.setCreatedTime(FormatDateUtil.formatDate(doc.getCreatedTime()));
+
+                HighlightField highlight = hit.getHighlightFields().get("content");
+                if (highlight != null && highlight.fragments() != null
+                        && highlight.fragments().length > 0) {
+                    vo.setHighlightContent(highlight.fragments()[0].string());
+                } else {
+                    // 无高亮片段时返回转义后的原文，不把正文中的 HTML 当标签执行。
+                    vo.setHighlightContent(HtmlUtils.htmlEscape(doc.getContent()));
+                }
+                records.add(vo);
+            }
+
+            // 8. nextCursor 必须取最后一条实际返回的消息，不能取多查出来的那一条。
+            MessageSearchResponse result = new MessageSearchResponse();
+            result.setRecords(records);
+            result.setHasMore(hasMore);
+            if (hasMore && count > 0) {
+                Object[] sortValues = hits[count - 1].getSortValues();
+                MessageSearchCursor nextCursor = new MessageSearchCursor();
+                nextCursor.setCreatedTime(((Number) sortValues[0]).longValue());
+                nextCursor.setMessageId(String.valueOf(sortValues[1]));
+                result.setNextCursor(nextCursor);
+            }
+            return result;
+        } catch (IOException | ElasticsearchException e) {
+            log.error("搜索消息失败，sessionId={}", messageSearchRequest.getSessionId(), e);
+            throw new BusinessException(ErrorCode.SYSTEM_BUSY, "搜索暂不可用，请稍后重试");
+        }
     }
 
     /** Redis ZSet 按分数倒序查询，最多返回 limit 条。 */

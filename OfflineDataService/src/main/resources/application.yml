@@ -3,6 +3,7 @@ spring:
     name: OfflineDataService
   profiles:
     active: dev
+
   cloud:
     nacos:
       discovery:

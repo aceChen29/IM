@@ -51,4 +51,11 @@ public class CommonConstant {
      * 系统通知持久化 Kafka 主题
      */
     public static final String KAFKA_STORE_NOTIFICATION_TOPIC = "store-notification-topic";
+
+    /**
+     * es相关主题
+     */
+    public static final String INDEX_NAME = "message";
+    public static final String INDEX_TOPIC = "message-index-topic";
+    public static final String INDEX_GROUP = "message-index-consumer-group";
 }

@@ -1,10 +1,12 @@
 package com.ace.im.user.service.impl;
 
 import cn.hutool.json.JSONUtil;
+import com.ace.im.common.constant.SessionTypeConstant;
 import com.ace.im.common.constant.MessageTypeConstant;
 import com.ace.im.user.constants.KafkaTopicConstant;
 import com.ace.im.user.model.dto.FriendApplicationNotificationDTO;
 import com.ace.im.user.model.dto.NewSessionNotificationDTO;
+import com.ace.im.user.model.dto.NewGroupSessionNotificationDTO;
 import com.ace.im.user.model.dto.SystemNotificationMessage;
 import com.ace.im.user.service.NotificationService;
 import com.ace.im.user.utils.SnowflakeDynamicUtil;
@@ -69,6 +71,31 @@ public class NotificationServiceImpl implements NotificationService {
             sendNotification(message, "新会话通知");
         } catch (Exception e) {
             log.error("发送新会话通知失败，用户ID={}，会话ID={}", receiverId, sessionId, e);
+        }
+    }
+
+    @Override
+    public void pushGroupNewSession(Long receiverId, Long sessionId,
+                                    NewGroupSessionNotificationDTO notification) {
+        try {
+            SystemNotificationMessage message = new SystemNotificationMessage();
+            message.setMessageId(generateMessageId());
+            message.setSessionId(sessionId);
+            message.setSenderId(null);
+            message.setReceiverId(receiverId);
+            message.setType(MessageTypeConstant.TYPE_SYSTEM_NEW_GROUP_SESSION);
+            message.setSessionType(SessionTypeConstant.GROUP_TYPE);
+            message.setTimestamp(System.currentTimeMillis());
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("sessionName", notification.getSessionName());
+            body.put("avatar", notification.getAvatar());
+            body.put("creatorId", notification.getCreatorId());
+            body.put("membersCount", notification.getMembersCount());
+            message.setBody(body);
+            sendNotification(message, "新群聊会话通知");
+        } catch (Exception e) {
+            log.error("发送新群聊会话通知失败，用户ID={}，会话ID={}", receiverId, sessionId, e);
         }
     }
 

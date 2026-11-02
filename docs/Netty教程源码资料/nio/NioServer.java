@@ -13,7 +13,7 @@ public class NioServer {
         //设置选择器去监听Server
         Selector selector = Selector.open();
         ServerSocketChannel ssc = ServerSocketChannel.open();//服务器通道打开
-        ssc.configureBlocking(false);//设置为非阻塞的
+        ssc.configureBlocking(false);//设置为非阻塞的，使得于线程不必卡在某一个通道的 accept() 上，可以通过 Selector 管理多个通道。
         ssc.bind(new InetSocketAddress(8080)); //绑定端口号
 
         //向serversocketchannel注册一个selector， 监听accept事件
