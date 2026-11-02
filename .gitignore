@@ -6,6 +6,8 @@ HELP.md
 target/
 /out/
 .mvn/wrapper/maven-wrapper.jar
+/docker/images/**/*.tar
+/docs/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
