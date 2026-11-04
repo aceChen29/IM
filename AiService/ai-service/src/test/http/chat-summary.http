@@ -1,0 +1,7 @@
+### AiService内部总结接口：POST请求体直接放聊天记录，不加JSON引号或historyLog字段。
+POST http://localhost:8105/api/ai/summary
+Content-Type: text/plain;charset=UTF-8
+Accept: text/plain
+
+[张三] 2026-11-04 15:00：我负责接口开发，周五前完成。
+[李四] 2026-11-04 15:01：我负责测试，接口完成后开始。

@@ -6,8 +6,9 @@ HELP.md
 target/
 /out/
 .mvn/wrapper/maven-wrapper.jar
-/docker/images/**/*.tar
+/docker/
 /docs/
+/RedPacketService/
 !**/src/main/**/target/
 !**/src/test/**/target/
 

@@ -10,6 +10,7 @@ import com.ace.im.common.model.vo.MessageResponse;
 import com.ace.im.offlinedata.model.dto.HistoryMessageRequest;
 import com.ace.im.offlinedata.model.dto.MessageSearchRequest;
 import com.ace.im.offlinedata.model.dto.OfflineMessageRequest;
+import com.ace.im.offlinedata.model.dto.SessionSummaryRequest;
 import com.ace.im.offlinedata.model.vo.MessageSearchResponse;
 import com.ace.im.offlinedata.service.MessageService;
 import jakarta.annotation.Resource;
@@ -48,5 +49,10 @@ public class MessageController {
     public BaseResponse<MessageSearchResponse> searchMessages(
             @Valid @RequestBody MessageSearchRequest request) {
         return ResultUtils.success(messageService.search(request));
+    }
+
+    @PostMapping("/summary")
+    public BaseResponse<String> chatSummary(@RequestBody SessionSummaryRequest sessionSummaryRequest) {
+        return ResultUtils.success(messageService.getSummary(sessionSummaryRequest));
     }
 }

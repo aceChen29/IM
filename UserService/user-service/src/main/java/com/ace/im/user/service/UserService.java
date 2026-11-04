@@ -12,6 +12,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import java.util.Map;
 
 /**
 * @author cy
@@ -37,4 +38,7 @@ public interface UserService extends IService<User> {
     UploadUrlResponse uploadUrl(String fileName);
 
     Boolean updateAvatar(UpdateAvatarRequest updateAvatarRequest);
+
+
+    Map<Long, String> getUserNickName(Long sessionId);
 }

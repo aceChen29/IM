@@ -7,6 +7,7 @@ import com.ace.im.common.model.vo.MessageResponse;
 import com.ace.im.offlinedata.model.dto.HistoryMessageRequest;
 import com.ace.im.offlinedata.model.dto.MessageSearchRequest;
 import com.ace.im.offlinedata.model.dto.OfflineMessageRequest;
+import com.ace.im.offlinedata.model.dto.SessionSummaryRequest;
 import com.ace.im.offlinedata.model.vo.MessageSearchResponse;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -27,4 +28,6 @@ public interface MessageService extends IService<Message> {
     List<MessageResponse> getHistoryMessages(HistoryMessageRequest request);
 
     MessageSearchResponse search(MessageSearchRequest request);
+
+    String getSummary(SessionSummaryRequest sessionSummaryRequest);
 }

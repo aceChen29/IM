@@ -13,6 +13,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.ace</groupId>
+            <artifactId>ai-facade</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>

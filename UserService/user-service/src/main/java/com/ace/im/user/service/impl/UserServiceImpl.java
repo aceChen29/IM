@@ -16,10 +16,12 @@ import com.ace.im.user.model.dto.UserRegisterRequest;
 import com.ace.im.user.model.vo.LoginAndRegisterResponse;
 import com.ace.im.user.model.vo.TokenResponse;
 import com.ace.im.user.model.vo.UploadUrlResponse;
+import com.ace.im.user.service.UserSessionService;
 import com.ace.im.user.utils.EmailUtil;
 import com.ace.im.common.utils.JwtUtil;
 import com.ace.im.user.utils.OssUtils;
 import com.ace.im.user.utils.RandomCodeUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ace.im.user.model.entity.User;
 import com.ace.im.user.service.UserService;
@@ -34,7 +36,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
 * @author cy
@@ -205,6 +209,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return updateById(user);
     }
 
+    private final UserSessionService userSessionService;
+    @Override
+    public Map<Long, String> getUserNickName(Long sessionId) {
+        List<Long> userIds = userSessionService.getUserIdBySessionId(sessionId);
+        List<User> users = lambdaQuery().in(User::getUserId, userIds).list();
+        return users.stream().collect(Collectors.toMap(User::getUserId, User::getNickname));
+    }
 
 
 

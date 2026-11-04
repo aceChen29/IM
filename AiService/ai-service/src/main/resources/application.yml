@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: AiService
+  profiles:
+    active: dev
+
+
+
+  cloud:
+    nacos:
+      discovery:
+        enabled: ${AI_DISCOVERY_ENABLED:true}
+        register-enabled: true
+        server-addr: ${NACOS_SERVER_ADDR:${SERVER_ADDR:127.0.0.1:18375}}
+server:
+  port: ${AI_SERVER_PORT:8105}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

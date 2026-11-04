@@ -2,6 +2,7 @@ package com.ace.im.offlinedata.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.json.JSONUtil;
+import com.ace.im.ai.api.client.AiServiceClient;
 import com.ace.im.common.common.ErrorCode;
 import com.ace.im.common.constant.CommonConstant;
 import com.ace.im.common.exception.BusinessException;
@@ -9,14 +10,12 @@ import com.ace.im.common.model.dto.MessageBody;
 import com.ace.im.common.model.dto.MessageRequest;
 import com.ace.im.common.model.vo.MessageResponse;
 import com.ace.im.common.utils.FormatDateUtil;
-import com.ace.im.offlinedata.model.dto.HistoryMessageRequest;
-import com.ace.im.offlinedata.model.dto.MessageSearchCursor;
-import com.ace.im.offlinedata.model.dto.MessageSearchRequest;
-import com.ace.im.offlinedata.model.dto.OfflineMessageRequest;
+import com.ace.im.offlinedata.model.dto.*;
 import com.ace.im.offlinedata.model.vo.MessageSearchResponse;
 import com.ace.im.offlinedata.model.vo.MessageSearchVO;
 import com.ace.im.offlinedata.model.po.MessageDoc;
 import com.ace.im.user.api.client.UserServiceClient;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ace.im.common.model.entity.Message;
 import com.ace.im.offlinedata.service.MessageService;
@@ -43,6 +42,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.util.HtmlUtils;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -254,6 +256,43 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
             log.error("搜索消息失败，sessionId={}", messageSearchRequest.getSessionId(), e);
             throw new BusinessException(ErrorCode.SYSTEM_BUSY, "搜索暂不可用，请稍后重试");
         }
+    }
+    private AiServiceClient aiServiceClient;
+    @Override
+    public String getSummary(SessionSummaryRequest sessionSummaryRequest) {
+        return aiServiceClient.chatSummary(historyChatLog(sessionSummaryRequest.getSessionId(), sessionSummaryRequest.getHours()));
+    }
+    public String historyChatLog(Long sessionId, Integer hours) {
+        Map<Long, String> userNickName = userServiceClient.getUserNickName(sessionId);
+
+        // 获取当前上海时间
+        ZoneId shanghai = ZoneId.of("Asia/Shanghai");
+        LocalDateTime nowShanghai = LocalDateTime.now(shanghai);
+        LocalDateTime threshold = nowShanghai.minusHours(hours);
+        // 格式化为 yyyy-MM-dd HH:mm:ss 字符串
+        String timeThresholdStr = threshold.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+        QueryWrapper<Message> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("session_id", sessionId).ge("created_time", timeThresholdStr);
+
+        List<Message> messages = this.list(queryWrapper);
+        StringBuilder chatLog = new StringBuilder();
+
+        for (Message message : messages) {
+            Long senderId = message.getSenderId();
+            String senderName = userNickName.get(senderId);
+            String timeStr = FormatDateUtil.formatDate(message.getCreatedTime());
+            chatLog.append("[").append(senderName).append("] ").append(timeStr).append("：").append(message.getContent()).append("\n");
+        }
+        String result = "没有消息";
+
+        try {
+            result = aiServiceClient.chatSummary(chatLog.toString().trim());
+        } catch (Exception e) {
+            throw new RuntimeException("调用会话总结失败");
+        }
+
+        return result;
     }
 
     /** Redis ZSet 按分数倒序查询，最多返回 limit 条。 */
