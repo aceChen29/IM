@@ -1,0 +1,20 @@
+### 在聊天中触发技能：模型应先loadSkill，再searchKnowledge，根据是否重复决定是否入库。
+### 相同规则若已经存在，预期说明已存在，不重复写入；新知识成功写入时返回真实docId。
+POST http://localhost:8105/api/ai/chat
+Content-Type: application/json
+
+{
+  "userId": "930000000000000001",
+  "sessionId": "930000000000000098",
+  "prompt": "请把以下规则保存到共享知识库，先按kb-curator技能查重，已经存在就不要重复保存：项目组每周三下午四点进行值班交接。"
+}
+
+### 检索确认：普通查询不应触发知识写入。
+POST http://localhost:8105/api/ai/chat
+Content-Type: application/json
+
+{
+  "userId": "930000000000000001",
+  "sessionId": "930000000000000098",
+  "prompt": "项目组什么时候进行值班交接？"
+}

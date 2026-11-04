@@ -1,0 +1,20 @@
+### 流式聊天：响应为text/event-stream;charset=UTF-8，每个data事件是一段UTF-8文本。
+POST http://localhost:8105/api/ai/streamChat
+Content-Type: application/json
+Accept: text/event-stream
+
+{
+  "userId": "930000000000000001",
+  "sessionId": "930000000000000099",
+  "prompt": "请分三点介绍项目中的聊天记录搜索。"
+}
+
+### 同一会话读取上一轮记忆；普通接口仍返回一次性JSON。
+POST http://localhost:8105/api/ai/chat
+Content-Type: application/json
+
+{
+  "userId": "930000000000000001",
+  "sessionId": "930000000000000099",
+  "prompt": "请简短概括你刚才的回答。"
+}
