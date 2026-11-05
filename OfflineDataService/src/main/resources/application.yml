@@ -11,3 +11,7 @@ spring:
         server-addr: ${SERVER_ADDR:localhost:18375}
 server:
   port: 8101
+
+im:
+  store:
+    concurrency: 6

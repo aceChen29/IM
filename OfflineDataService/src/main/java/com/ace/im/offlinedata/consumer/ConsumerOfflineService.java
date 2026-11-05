@@ -18,7 +18,7 @@ groupId = "infinite-chat-store-group" 指定它属于哪个消费组；方法上
 @RequiredArgsConstructor
 public class ConsumerOfflineService {
     private final MessageService messageService;
-    @KafkaListener(topics = "store-topic", groupId = "infinite-chat-store-group")
+    @KafkaListener(topics = "store-topic", groupId = "infinite-chat-store-group",  concurrency = "${im.push.concurrency:6}")
     public void consume(String message){
         System.out.println("Consumed message store: " + message);
         MessageRequest messageRequest = JSONUtil.toBean(message, MessageRequest.class);

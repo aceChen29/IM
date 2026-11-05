@@ -5,6 +5,7 @@ import cn.hutool.crypto.digest.BCrypt;
 
 import com.ace.im.common.common.ErrorCode;
 import com.ace.im.common.constant.CommonConstant;
+import com.ace.im.common.constant.SessionTypeConstant;
 import com.ace.im.common.exception.BusinessException;
 import com.ace.im.user.constants.UserConstant;
 
@@ -17,6 +18,10 @@ import com.ace.im.user.model.vo.LoginAndRegisterResponse;
 import com.ace.im.user.model.vo.TokenResponse;
 import com.ace.im.user.model.vo.UploadUrlResponse;
 import com.ace.im.user.service.UserSessionService;
+import com.ace.im.user.service.SessionService;
+import com.ace.im.user.model.entity.Session;
+import com.ace.im.user.model.entity.UserSession;
+import com.ace.im.user.utils.SnowflakeDynamicUtil;
 import com.ace.im.user.utils.EmailUtil;
 import com.ace.im.common.utils.JwtUtil;
 import com.ace.im.user.utils.OssUtils;
@@ -34,7 +39,9 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +56,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService{
+    private final SessionService sessionService;
+    private final SnowflakeDynamicUtil snowflakeDynamicUtil;
     private final EmailUtil emailUtil;
     private final StringRedisTemplate stringRedisTemplate;
 
@@ -67,6 +76,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public LoginAndRegisterResponse register(UserRegisterRequest userRegisterRequest) {
         String email = userRegisterRequest.getEmail();
         String password = userRegisterRequest.getPassword();
@@ -93,10 +103,46 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             // 处理“检查不存在”之后，另一请求抢先注册的情况
             throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
         }
+        // 注册时为新用户创建默认 AI 会话，与用户记录一起提交。
+        createAiSession(user.getUserId());
+
         LoginAndRegisterResponse loginAndRegisterResponse = new LoginAndRegisterResponse();
         BeanUtil.copyProperties(user, loginAndRegisterResponse);
         stringRedisTemplate.delete(email);
         return loginAndRegisterResponse;
+    }
+
+    private void createAiSession(Long userId) {
+        Long sessionId = snowflakeDynamicUtil.nextId();
+        Date now = new Date();
+        Session session = new Session();
+        session.setSessionId(sessionId);
+        session.setName("AI 助手");
+        session.setType(SessionTypeConstant.ROBOT_TYPE);
+        session.setStatus(CommonConstant.SESSION_STATUS);
+        session.setCreatedTime(now);
+        session.setUpdatedTime(now);
+        if (!sessionService.save(session)) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "创建 AI 会话失败");
+        }
+
+        List<UserSession> members = List.of(
+                createUserSession(userId, sessionId, now),
+                createUserSession(CommonConstant.AI_ID, sessionId, now));
+        if (!userSessionService.saveBatch(members)) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "创建 AI 会话成员失败");
+        }
+    }
+
+    private UserSession createUserSession(Long userId, Long sessionId, Date now) {
+        UserSession userSession = new UserSession();
+        userSession.setUserId(userId);
+        userSession.setSessionId(sessionId);
+        userSession.setRole(CommonConstant.USER_ROLE_NORMAL);
+        userSession.setStatus(CommonConstant.SESSION_STATUS);
+        userSession.setCreatedTime(now);
+        userSession.setUpdatedTime(now);
+        return userSession;
     }
 
     @Override
