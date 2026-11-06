@@ -7,6 +7,7 @@ import com.ace.im.common.common.ErrorCode;
 import com.ace.im.common.constant.CommonConstant;
 import com.ace.im.common.constant.SessionTypeConstant;
 import com.ace.im.common.exception.BusinessException;
+import com.ace.im.common.model.vo.UserInfosResponse;
 import com.ace.im.user.constants.UserConstant;
 
 import com.ace.im.user.loadbalancer.NettyServiceLocator;
@@ -26,6 +27,7 @@ import com.ace.im.user.utils.EmailUtil;
 import com.ace.im.common.utils.JwtUtil;
 import com.ace.im.user.utils.OssUtils;
 import com.ace.im.user.utils.RandomCodeUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ace.im.user.model.entity.User;
@@ -42,6 +44,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -263,6 +266,28 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return users.stream().collect(Collectors.toMap(User::getUserId, User::getNickname));
     }
 
+    @Override
+    public Map<Long, UserInfosResponse> getUserInfos(List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        Map<Long, UserInfosResponse> userInfosResponses = new HashMap<>();
+
+        // 使用 Lambda Wrapper
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(User::getUserId, userIds);
+        List<User> users = this.list(queryWrapper);
+
+        if (users != null && !users.isEmpty()) {
+            users.forEach(user -> {
+                UserInfosResponse userInfosResponse = new UserInfosResponse();
+                BeanUtil.copyProperties(user, userInfosResponse);
+                userInfosResponses.put(user.getUserId(), userInfosResponse);
+            });
+        }
+        return userInfosResponses;
+    }
 
 
 }

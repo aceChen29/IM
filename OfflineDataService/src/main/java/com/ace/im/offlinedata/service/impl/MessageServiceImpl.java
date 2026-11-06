@@ -6,6 +6,7 @@ import com.ace.im.ai.api.client.AiServiceClient;
 import com.ace.im.common.common.ErrorCode;
 import com.ace.im.common.constant.CommonConstant;
 import com.ace.im.common.exception.BusinessException;
+import com.ace.im.common.exception.ThrowUtils;
 import com.ace.im.common.model.dto.MessageBody;
 import com.ace.im.common.model.dto.MessageRequest;
 import com.ace.im.common.model.vo.MessageResponse;
@@ -62,10 +63,11 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
     public void saveMessageToMySQL(MessageRequest messageRequest) {
         Message message = new Message();
         BeanUtil.copyProperties(messageRequest, message);
-        message.setContent(messageRequest.getBody().getContent());
-        message.setReplyId(messageRequest.getBody().getReplyId());
-        if(!save(message))
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+        MessageBody body = messageRequest.getBody();
+        Integer type = messageRequest.getType();
+        // 红包消息：将整个 body 序列化为 JSON 存入 content    if (type != null && type == MessageTypeConstant.RED_PACKET_MESSAGE) {        message.setContent(JSON.toJSONString(messageRequest.getBody()));    } else {        message.setContent(body.getContent());    }
+        message.setReplyId(body.getReplyId());
+        ThrowUtils.throwIf(!this.save(message), ErrorCode.SYSTEM_ERROR);
     }
     private final StringRedisTemplate stringRedisTemplate;
     private final UserServiceClient userServiceClient;

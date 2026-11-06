@@ -1,5 +1,6 @@
 package com.ace.im.user.service;
 
+import com.ace.im.common.model.vo.UserInfosResponse;
 import com.ace.im.user.model.dto.UpdateAvatarRequest;
 import com.ace.im.user.model.dto.UserLoginCodeRequest;
 import com.ace.im.user.model.dto.UserLoginPasswordRequest;
@@ -41,4 +42,6 @@ public interface UserService extends IService<User> {
 
 
     Map<Long, String> getUserNickName(Long sessionId);
+
+    Map<Long, UserInfosResponse> getUserInfos(List<Long> userIds);
 }

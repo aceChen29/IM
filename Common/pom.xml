@@ -13,6 +13,11 @@
     <name>Common</name>
     <description>Common</description>
     <dependencies>
+        <!-- 公共 SnowflakeUtil 使用 Hutool 雪花 ID，版本由父工程管理。 -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+        </dependency>
         <!-- 公共模型使用 MyBatis-Plus 注解及分页类型，不启动数据库自动配置。 -->
         <dependency>
             <groupId>com.baomidou</groupId>
